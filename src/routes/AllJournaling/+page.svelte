@@ -1,55 +1,70 @@
-
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
-
-<h1>The textarea element</h1>
-<body>
-  <ul>
- <div class="artifact-container">
-        <div class="artifact-content">
-            <div class="artifact-title">Simple Journaling Input</div>
-            <div class="artifact-subtitle"> 16-june-2025</div>
-        </div>
-        <div class="artifact-icon-container">
-            <svg class="atom-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Center circle -->
-                <circle cx="12" cy="12" r="2" fill="#666666"/>
-                <!-- Orbital paths -->
-                <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)" stroke="#666666" stroke-width="1.5" fill="none"/>
-                <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)" stroke="#666666" stroke-width="1.5" fill="none"/>
-                <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(90 12 12)" stroke="#666666" stroke-width="1.5" fill="none"/>
-            </svg>
-        </div>
-    </div>
-    </ul>
-  </body>
-
-<form method="get">
-  <p><label for="w3review">Journaling</label></p>
-  <textarea id="w3review" name="w3review" rows="4" cols="50"></textarea>
-  <br>
- <button type="submit">Submit</button>
-</form>
-<button onclick={handlePrompt}>Prompt</button>
-<p>{prmt}</p>
-
 <script lang="ts">
-
-  let prmt = $state("");
+  import Journal from '../Journal/+page.svelte';
   
-  async function handlePrompt() {
-     const response = await fetch('./Journal');
-     const json = await response.json();
-     const data = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-     prmt = JSON.stringify(data);
-    if (response.ok) {
-      console.log('Response from server:', data);
-    } else {
-      console.error('Error:', response.statusText);
+  export const postType = 'preview';
+  
+  let valueToPass = 'something awesome';
+  
+  let Journaling = [
+    {
+      id: 1,
+      title: "Simple Journaling Input",
+      date: "16-june-2025",
+      content: "This is a simple journaling input example.",
+      closed: false
+    },
+    {
+      title: "Advanced Journaling Input",
+      date: "17-june-2025",
+      content: "This is an advanced journaling input example with more features.",
+      closed: false
+    },
+    {
+      title: "Another Journaling Input",
+      date: "18-june-2025",
+      content: "This is another journaling input example.",
+      closed: true
+    },
+    {
+      title: "Advanced Journaling Input",
+      date: "17-june-2025",
+      content: "This is an advanced journaling input example with more features.",
+      closed: false
     }
-  }
+  ];
+    let totalEntries = Journaling.length;
+    let closedEntries = Journaling.filter(entry => entry.closed).length;
+   export const entries: typeof Journaling[] = [];
 </script>
-<style>
+
+<h1>Welcome to AllJournaling</h1>
+<ul>
+	<li><a href="/blog/one">one</a></li>
+	<li><a href="/blog/two">two</a></li>
+	<li><a href="/blog/three">three</a></li>
+</ul>
+ {#each Journaling as entry}
+<div class="artifact-container">
+ 
+    <div class="artifact-content">
+      <div class="artifact-title">{entry.title}</div>
+      <div class="artifact-subtitle">{entry.date}</div>
+      <p>{entry.content}</p>
+    </div>
+    <div class="artifact-icon-container">
+      <svg class="atom-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="2" fill="#666666"/>
+        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)" stroke="#666666" stroke-width="1.5" fill="none"/>
+        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)" stroke="#666666" stroke-width="1.5" fill="none"/>
+        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(90 12 12)" stroke="#666666" stroke-width="1.5" fill="none"/>
+      </svg>
+    </div>
+    
+  </div>
+  {/each}
+   
+
+    <style>
   * {
             margin: 0;
             padding: 0;

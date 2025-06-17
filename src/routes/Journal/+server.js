@@ -5,7 +5,7 @@ const ai = new GoogleGenAI({ apiKey: API_KEY });
 export async function GET() {
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
-      contents: "Write a short review of W3Schools",
+      contents: "Getting started with Journaling  ",
      
     });
     return new Response(JSON.stringify(response), {
