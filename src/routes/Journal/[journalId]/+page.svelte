@@ -105,7 +105,7 @@
 <div class="journal-container">
   <!-- Header -->
   <div class="journal-header">
-    <button class="back-button" onclick={() => goto('/AllJournaling')}>
+    <button class="back-button" onclick={() => goto('/all-entries')}>
       ← Back to All Journals
     </button>
     <div class="journal-info">
