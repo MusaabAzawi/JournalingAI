@@ -2,16 +2,30 @@
   import { goto } from '$app/navigation';
 
   let prmt = $state("");
+  let quickJournalText = $state("");
+  let isTestingConnection = $state(false);
   
   async function handlePrompt() {
-     const response = await fetch('./Journal');
-     const json = await response.json();
-     const data = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-     prmt = JSON.stringify(data);
-    if (response.ok) {
+    isTestingConnection = true;
+    try {
+      const response = await fetch('/Journal', {
+        method: 'GET'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const json = await response.json();
+      const data = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+      prmt = data || 'Connection successful! AI responded.';
+      
       console.log('Response from server:', data);
-    } else {
-      console.error('Error:', response.statusText);
+    } catch (error) {
+      console.error('Error:', error);
+      prmt = `Error: ${error.message}`;
+    } finally {
+      isTestingConnection = false;
     }
   }
 
@@ -28,93 +42,176 @@
   function handleArtifactClick() {
     createNewJournal();
   }
+
+  // Handle quick journal submission
+  async function handleQuickJournal() {
+    if (!quickJournalText.trim()) return;
+    
+    try {
+      const response = await fetch('/api', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: quickJournalText,
+          type: 'new_entry'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const aiResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        alert(`AI Response: ${aiResponse}`);
+        quickJournalText = ''; // Clear the form
+      } else {
+        alert('Error submitting journal entry');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error submitting journal entry');
+    }
+  }
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<div class="main-container">
+  <div class="hero-section">
+    <h1>🤖 Welcome to JournalingAI</h1>
+    <p>Your personal AI-powered journaling companion</p>
+  </div>
 
-<h1>Create a New Journal Entry</h1>
-<body>
-  <ul>
-    <!-- Make the artifact container clickable -->
+  <div class="action-section">
+    <h2>Start Your Journaling Journey</h2>
+    
+    <!-- Main Journal Entry Card -->
     <div class="artifact-container" onclick={handleArtifactClick}>
       <div class="artifact-content">
-        <div class="artifact-title">Start New Journal Entry</div>
-        <div class="artifact-subtitle">Click to begin journaling with AI assistance</div>
+        <div class="artifact-title">🚀 Start New Journal Session</div>
+        <div class="artifact-subtitle">Click to begin an AI-guided journaling conversation</div>
       </div>
       <div class="artifact-icon-container">
         <svg class="atom-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Center circle -->
           <circle cx="12" cy="12" r="2" fill="#666666"/>
-          <!-- Orbital paths -->
           <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)" stroke="#666666" stroke-width="1.5" fill="none"/>
           <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)" stroke="#666666" stroke-width="1.5" fill="none"/>
           <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(90 12 12)" stroke="#666666" stroke-width="1.5" fill="none"/>
         </svg>
       </div>
     </div>
-  </ul>
-</body>
 
-<!-- Keep your existing demo form for testing -->
-<form method="get">
-  <p><label for="w3review">Quick Journal Test</label></p>
-  <textarea id="w3review" name="w3review" rows="4" cols="50" placeholder="Write your thoughts here..."></textarea>
-  <br>
-  <button type="submit">Submit</button>
-</form>
+    <!-- Quick Journal Form -->
+    <div class="quick-journal-section">
+      <h3>💭 Quick Journal Entry</h3>
+      <p>Share a quick thought and get instant AI feedback</p>
+      
+      <div class="quick-journal-form">
+        <textarea
+          bind:value={quickJournalText}
+          placeholder="What's on your mind today? Share your thoughts, feelings, or experiences..."
+          rows="4"
+        ></textarea>
+        
+        <button 
+          onclick={handleQuickJournal}
+          disabled={!quickJournalText.trim()}
+          class="submit-button"
+        >
+          💬 Get AI Feedback
+        </button>
+      </div>
+    </div>
 
-<button onclick={handlePrompt}>Test API Connection</button>
-{#if prmt}
-  <div class="api-response">
-    <p><strong>API Response:</strong></p>
-    <p>{prmt}</p>
+    <!-- Test Connection -->
+    <div class="test-section">
+      <h3>🔧 Test AI Connection</h3>
+      <button 
+        onclick={handlePrompt}
+        disabled={isTestingConnection}
+        class="test-button"
+      >
+        {#if isTestingConnection}
+          Testing...
+        {:else}
+          Test Connection
+        {/if}
+      </button>
+      
+      {#if prmt}
+        <div class="api-response">
+          <p><strong>Response:</strong></p>
+          <p>{prmt}</p>
+        </div>
+      {/if}
+    </div>
+
+    <!-- Navigation Links -->
+    <div class="nav-section">
+      <a href="/all-entries" class="nav-link">
+        📚 View All Entries
+      </a>
+      <a href="/about" class="nav-link">
+        ℹ️ Learn More
+      </a>
+    </div>
   </div>
-{/if}
+</div>
 
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  .main-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
   }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: #f5f5f5;
-    padding: 40px 20px;
+  .hero-section {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .hero-section h1 {
+    font-size: 2.5rem;
+    margin: 0 0 10px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-section p {
+    font-size: 1.2rem;
+    color: #4a5568;
+    margin: 0;
+  }
+
+  .action-section {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-    gap: 20px;
+    gap: 30px;
+  }
+
+  .action-section h2 {
+    text-align: center;
+    color: #2d3748;
+    margin-bottom: 20px;
   }
 
   .artifact-container {
-    width: 100%;
-    max-width: 800px;
-    background-color: #ffffff;
-    border: 2px solid #a0b4d3;
-    border-radius: 24px;
-    padding: 24px 32px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 25px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: all 0.3s ease;
     cursor: pointer;
-    position: relative;
-    margin: 20px 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   }
 
   .artifact-container:hover {
-    border-color: #7090c0;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    border-color: #667eea;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
     transform: translateY(-2px);
-  }
-
-  .artifact-container:active {
-    transform: translateY(0);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
   .artifact-content {
@@ -122,22 +219,22 @@
   }
 
   .artifact-title {
-    font-size: 20px;
-    font-weight: 500;
-    color: #1a1a1a;
-    margin-bottom: 4px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 5px;
   }
 
   .artifact-subtitle {
-    font-size: 16px;
-    color: #666666;
+    color: #4a5568;
+    font-size: 1rem;
   }
 
   .artifact-icon-container {
-    width: 48px;
-    height: 48px;
-    background-color: #ffffff;
-    border: 2px solid #d0d0d0;
+    width: 50px;
+    height: 50px;
+    background: #f7fafc;
+    border: 2px solid #e2e8f0;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -147,8 +244,8 @@
   }
 
   .artifact-container:hover .artifact-icon-container {
-    border-color: #a0b4d3;
-    background-color: #f8f9fa;
+    border-color: #667eea;
+    background: #eef2ff;
   }
 
   .atom-icon {
@@ -156,100 +253,166 @@
     height: 24px;
   }
 
-  textarea {
-    margin: auto;
-    justify-content: center;
-    align-items: center;
-    width: 50%;
-    border: 3px solid green;
-    padding: 10px;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 14px;
+  .quick-journal-section {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   }
 
-  button {
-    margin-top: 10px;
-    padding: 10px 20px;
+  .quick-journal-section h3 {
+    margin: 0 0 8px 0;
+    color: #2d3748;
+    font-size: 1.2rem;
+  }
+
+  .quick-journal-section p {
+    margin: 0 0 20px 0;
+    color: #4a5568;
+  }
+
+  .quick-journal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: inherit;
     font-size: 16px;
+    line-height: 1.5;
+    resize: vertical;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+
+  .submit-button {
+    align-self: flex-start;
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
     cursor: pointer;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: #f8f9fa;
     transition: all 0.2s;
   }
 
-  button:hover {
-    background: #e9ecef;
-    border-color: #adb5bd;
+  .submit-button:hover:not(:disabled) {
+    background: #5a6fd8;
+    transform: translateY(-1px);
   }
 
-  p {
-    margin-top: 10px;
-    font-size: 16px;
-    max-width: 800px;
+  .submit-button:disabled {
+    background: #a0aec0;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .test-section {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     text-align: center;
   }
 
-  h1 {
-    font-size: 24px;
-    margin-bottom: 20px;
-    text-align: center;
+  .test-section h3 {
+    margin: 0 0 15px 0;
+    color: #2d3748;
+  }
+
+  .test-button {
+    background: #48bb78;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+
+  .test-button:hover:not(:disabled) {
+    background: #38a169;
+  }
+
+  .test-button:disabled {
+    background: #a0aec0;
+    cursor: not-allowed;
   }
 
   .api-response {
-    max-width: 800px;
-    padding: 20px;
-    background: #f8f9fa;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
     margin-top: 20px;
+    padding: 15px;
+    background: #f7fafc;
+    border-radius: 8px;
+    text-align: left;
   }
 
   .api-response p {
-    text-align: left;
     margin: 5px 0;
-    word-wrap: break-word;
+    color: #2d3748;
   }
 
-  ul {
-    width: 100%;
-    max-width: 800px;
-    list-style: none;
-    padding: 0;
-  }
-
-  form {
+  .nav-section {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    margin: 30px 0;
-    padding: 20px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    background: white;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
-  label {
+  .nav-link {
+    background: white;
+    color: #4a5568;
+    text-decoration: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    transition: all 0.2s;
     font-weight: 500;
-    color: #333;
+  }
+
+  .nav-link:hover {
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-1px);
   }
 
   @media (max-width: 768px) {
+    .hero-section h1 {
+      font-size: 2rem;
+    }
+
     .artifact-container {
-      padding: 20px;
       flex-direction: column;
       text-align: center;
       gap: 15px;
+      padding: 20px;
     }
 
     .artifact-icon-container {
       margin-left: 0;
     }
 
-    textarea {
-      width: 90%;
+    .nav-section {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .nav-link {
+      width: 100%;
+      max-width: 300px;
+      text-align: center;
     }
   }
 </style>

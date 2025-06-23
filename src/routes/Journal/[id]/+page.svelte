@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
 
-  let journalId = $page.params.journalId;
+  let journalId = $page.params.id; // Changed from journalId to id
   let messages = $state<Array<{role: string, content: string}>>([]);
   let currentInput = $state('');
   let isLoading = $state(false);
@@ -17,9 +17,8 @@
       month: 'long', 
       day: 'numeric' 
     });
-    journalTitle = `Journal Entry ${journalId}`;
+    journalTitle = `Journal Session ${journalId}`;
 
-    
     await initializeJournal();
   });
 
@@ -46,9 +45,19 @@
             { role: 'ai', content: aiResponse }
           ];
         }
+      } else {
+        console.error('Failed to initialize journal:', response.status);
+        // Add a fallback message
+        messages = [
+          { role: 'ai', content: 'Hello! I\'m here to help you with your journaling. What\'s on your mind today?' }
+        ];
       }
     } catch (error) {
       console.error('Error initializing journal:', error);
+      // Add a fallback message
+      messages = [
+        { role: 'ai', content: 'Hello! I\'m here to help you with your journaling. What\'s on your mind today?' }
+      ];
     } finally {
       isLoading = false;
     }
@@ -81,10 +90,15 @@
         
         if (aiResponse) {
           messages = [...messages, { role: 'ai', content: aiResponse }];
+        } else {
+          messages = [...messages, { role: 'ai', content: 'I hear you. Could you tell me more about that?' }];
         }
+      } else {
+        messages = [...messages, { role: 'ai', content: 'I\'m having trouble responding right now, but I\'m listening. Please continue.' }];
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      messages = [...messages, { role: 'ai', content: 'I\'m having trouble responding right now, but I\'m listening. Please continue.' }];
     } finally {
       isLoading = false;
     }
@@ -105,8 +119,8 @@
 <div class="journal-container">
   <!-- Header -->
   <div class="journal-header">
-    <button class="back-button" onclick={() => goto('/all-entries')}>
-      ← Back to All Journals
+    <button class="back-button" onclick={() => goto('/')}>
+      ← Back to Home
     </button>
     <div class="journal-info">
       <h1 class="journal-title">{journalTitle}</h1>
